@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-RELVER=4.0.5
+RELVER=4.0.7
 
 if [ -x /usr/bin/curl ]; then
   PRETTY_REPOS=(`curl -s "https://api.github.com/orgs/KiCad/repos?per_page=100&page=1" \
@@ -12,7 +12,7 @@ if [ -x /usr/bin/curl ]; then
   PRETTY_SRC=(${PRETTY_SRC[@]/#/https://github.com/KiCad/})
 fi
 
-REPOS_NOT_TAGGED=""
+REPOS_NOT_TAGGED=0
 NOF_REPOS_TAGGED=0
 printf "" > git-dictates.tmp
 
@@ -33,7 +33,8 @@ for repo in ${PRETTY_SRC[@]}; do
   echo $PRETTY_DIR
   if [ -e $PRETTY_DIR ]; then
     cd $PRETTY_DIR
-    git pull origin master
+    #git pull origin master
+    git fetch origin
     check_tag
     cd ..
   else
@@ -41,12 +42,13 @@ for repo in ${PRETTY_SRC[@]}; do
   fi
 done
 
-wget https://raw.githubusercontent.com/KiCad/kicad-library/master/template/fp-lib-table.for-pretty -O fp-lib-table.for-pretty
+#wget https://raw.githubusercontent.com/KiCad/kicad-library/master/template/fp-lib-table.for-pretty -O fp-lib-table.for-pretty
+wget https://raw.githubusercontent.com/KiCad/kicad-library/${RELVER}/template/fp-lib-table.for-pretty -O fp-lib-table.for-pretty
 
 echo "### SUMMARY ###"
 echo "Repos to be removed from release tar: $REPOS_NOT_TAGGED"
 echo "Repos to be included to the release tar: $NOF_REPOS_TAGGED"
-echo "Repos expected to be included form the fp-lib-table:"
+echo -n "Repos expected to be included from the fp-lib-table:"
 cat fp-lib-table.for-pretty | grep pretty | awk '{ print $5 }' | sed 's/${KISYSMOD}\///g' | sed 's/)(options//g' | wc -l
 cat fp-lib-table.for-pretty | grep pretty | awk '{ print $5 }' | sed 's/${KISYSMOD}\///g' | sed 's/)(options//g' | sort > fp-lib-table-dictates
 cat git-dictates.tmp | sort > git-dictates
